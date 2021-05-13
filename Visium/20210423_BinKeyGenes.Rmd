@@ -18,13 +18,14 @@ outdir <- "/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210423_PlotKeyGene
 
 ```{r}
 covid <- readRDS("/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210409_PreliminaryPipeline/outdir_alltissues/all_DF_annotated.RDS")
-predictions <- read.delim("/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210413_LabelTransfer/VS_INFB/all_predictions.txt")
+predictions <- read.delim("/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210413_LabelTransfer/VS_INFB/all_predictions.txt") #label transfer results, not used for the key result in this script i.e. plotting the expression of key genes of interest
 rownames(predictions) <- predictions$X
 predictions$X <- NULL
 covid <- AddMetaData(covid, predictions)
 SpatialDimPlot(covid, group.by = "predicted.id_medConf")
 ```
 
+# define some key marker genes of interest
 ```{r}
 # I changed RIG-1 --> DDX58
 test <- c("LY6E", "IFI44L", "OAS1", "IFI6", "ISG15", "OASL", "RTP4", "IRF7", "XAF1", "IFIT1", "LGALS3BP", "CD38", "HERC6", "EIF2AK2", "IFIH1", "MX1", "IFITM3", "PARP12", "HERC5", "IRF5", "IFI35", "ZBP1", "IRF9", "CXCL10", "IRF3", "IFNA2", "IRF1", "IFNA1", "IFNA13", "IFNGR1", "IFNB1", "IFNG", "IFNAR2", "IFNAR1", "BAK1", "BAX", "CASP7", "CASP3", "CASP1", "TNFSF10", "CASP6", "IL18", "TRADD", "CASP9", "FADD", "CASP4", "CASP5", "FASLG", "TP53", "FAS", "CASP12", "NLRP3", "XIAP", "MDM2", "BCL2", "CASP8", "CASP2", "NFKB1", "BID", "DDX58", "TLR7", "TLR3", "TLR2", "TLR5", "TLR4", "TLR1", "TLR8", "TLR9", "TLR6", "SEPP1", "LY86", "HIF1A", "CIT", "RGS1", "CD163", "OR52R1", "DEFA4", "PER1", "KCNJ2", "C11orf74", "TST")
@@ -87,7 +88,6 @@ DotPlot(object = covid, features = c(prognostic), group.by = "tissues") +
 ggsave(filename = paste0(outdir, "dotplot_", "prognostic", ".jpeg"), width = 10)
 ```
 
-
 ```{r}
 normgenes <- as.data.frame(t(as.data.frame(covid@assays$Spatial@data[c("IFI27", "CTSL", interferon, apoptosis, pathogen_sensing, prognostic),])))
 # need to remove genes with 0 counts in all spots, or the binning will fail
@@ -96,7 +96,6 @@ normgenes <- normgenes[,names(which(colSums(normgenes) > 0))]
 #colnames(normgenes)[64]
 normgenes <- normgenes[,-which(colnames(normgenes) == "FASLG")]
 normgenes <- normgenes[,-which(colnames(normgenes) == "TLR9")]
-
 ```
 
 # Bin the genes
