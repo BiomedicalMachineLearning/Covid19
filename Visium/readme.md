@@ -4,7 +4,7 @@
 
 `VisiumPipeline_covid_alltissues.Rmd` (code version) - QC and data pre-processing in Seurat
 
-`VisiumPipeline_covid_alltissues.nb.html` (HTML notebook version)
+`VisiumPipeline_covid_alltissues.nb.html` (HTML notebook version) - the same file as above
 
 # Gene expression visualisation by binning strategy
 
