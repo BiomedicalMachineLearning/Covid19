@@ -1,0 +1,56 @@
+---
+title: "Demultiplex"
+output: html_notebook
+---
+
+```{r message=FALSE, warning=FALSE}
+library(Seurat)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+outdir <- "/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210409_Demultiplex/outdir/"
+
+indir <- "/Volumes/STNNHPC-Q1139/Michael/Visium13_B_Covid/outs/"
+
+my.tissues <- read.delim("/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210409_Demultiplex/sample_demultiplex.csv", sep = ",", header = TRUE)
+```
+
+# covid
+
+```{r}
+sampleID <- "covid"
+covid <- Load10X_Spatial("/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/0_data/", filename = "filtered_feature_bc_matrix.h5")
+SpatialFeaturePlot(covid, features = "nFeature_Spatial") + theme(legend.position = "right")
+```
+
+Add to the sample
+
+```{r}
+covid[["tissues"]] <- my.tissues$sample
+SpatialDimPlot(covid, group.by = "tissues")
+```
+
+```{r}
+covid.1 <- subset(covid, tissues == "sample1")
+covid.2 <- subset(covid, tissues == "sample2")
+covid.3 <- subset(covid, tissues == "sample3")
+covid.4 <- subset(covid, tissues == "sample4")
+```
+
+```{r}
+SpatialDimPlot(covid.1, group.by = "tissues")
+SpatialDimPlot(covid.2, group.by = "tissues")
+SpatialDimPlot(covid.3, group.by = "tissues")
+SpatialDimPlot(covid.4, group.by = "tissues")
+```
+
+```{r}
+saveRDS(covid, file = paste0(outdir, "covid.RDS"))
+saveRDS(covid.1, file = paste0(outdir, "covid.1.RDS"))
+saveRDS(covid.2, file = paste0(outdir, "covid.2.RDS"))
+saveRDS(covid.3, file = paste0(outdir, "covid.3.RDS"))
+saveRDS(covid.4, file = paste0(outdir, "covid.4.RDS"))
+```
+
