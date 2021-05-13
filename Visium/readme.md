@@ -1,6 +1,8 @@
-# Data pre-processing
+# Data pre-processing in Seurat
 
-VisiumPipeline_covid_alltissues.Rmd (code version)
+demultiplex.Rmd - first step: raw data to Seurat object
+
+VisiumPipeline_covid_alltissues.Rmd (code version) - QC and data pre-processing in Seurat
 
 VisiumPipeline_covid_alltissues.nb.html (HTML notebook version)
 
