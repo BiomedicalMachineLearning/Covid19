@@ -1,0 +1,187 @@
+---
+title: "Bin IFI27"
+output: html_notebook
+---
+
+```{r}
+library(Seurat)
+library(dplyr)
+library(dlookr)
+library(RColorBrewer)
+```
+
+```{r}
+outdir <- "/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210419_BinIFI27/outdir/"
+```
+
+
+```{r}
+covid <- readRDS("/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210409_PreliminaryPipeline/outdir_alltissues/all_DF_annotated.RDS")
+predictions <- read.delim("/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210413_LabelTransfer/VS_INFB/all_predictions.txt")
+rownames(predictions) <- predictions$X
+predictions$X <- NULL
+covid <- AddMetaData(covid, predictions)
+SpatialDimPlot(covid, group.by = "predicted.id_medConf")
+```
+
+```{r}
+SpatialFeaturePlot(covid, features = c("IFI27"))
+
++ ggplot2::scale_fill_continuous(limits = c(0.0,1.0),, breaks = c(0.0, 0.5, 1.0))
+```
+```{r}
+DotPlot(object = covid, features = c("IFI27", "ACE2", "TMPRSS2", "CTSL"), group.by = "tissues") +
+  scale_colour_gradient2(low = "blue", mid = "white", high = "red")
+```
+
+exprMatrix <- B1@assays$B1@counts
+
+```{r}
+IFIexp <- covid@assays$Spatial@counts["IFI27",]
+IFInorm <- covid@assays$Spatial@data["IFI27",]
+covid <- AddMetaData(covid, as.data.frame(IFIexp))
+covid <- AddMetaData(covid, as.data.frame(IFInorm))
+# looking at the differences, SpatialFeaturePlot is plotting the values in the normalised expression data
+```
+
+```{r}
+hist(covid$IFInorm)
+```
+
+# bin them into even numbers
+
+```{r}
+IFInorm <- as.data.frame(IFInorm)
+IFInorm <- mutate(IFInorm, IFIbin = ifelse(IFInorm < 1, "lo", ifelse(IFInorm > 2, "hi", "med")))
+
+IFInorm <- mutate(IFInorm, IFIbin2 = ifelse(IFInorm == 0, "off", ifelse(IFInorm < 1, "lo", ifelse(IFInorm > 2, "hi", "med"))))
+
+covid <- AddMetaData(covid, IFInorm[,"IFIbin", drop = FALSE])
+covid <- AddMetaData(covid, IFInorm[,"IFIbin2", drop = FALSE])
+
+hist(IFInorm$IFInorm) + abline(v=c(1,2), col="blue")
+```
+
+```{r}
+palette = c(`off` = "white",
+            `lo` = "lightskyblue",
+            `med` = "blue",
+            `hi` = "red")
+SpatialDimPlot(covid, group.by = "IFIbin", cols = palette)
+SpatialDimPlot(covid, group.by = "IFIbin2", cols = palette)
+
+```
+
+binning(
+  x,
+  nbins,
+  type = c("quantile", "equal", "pretty", "kmeans", "bclust"),
+  ordered = TRUE,
+  labels = NULL,
+  approxy.lab = TRUE
+)
+
+
+# bin into more groups
+
+```{r}
+tags <- 0:6
+IFInorm <- mutate(IFInorm, IFIbin3 = case_when(
+  IFInorm == 0 ~ tags[1],
+  IFInorm > 0 & IFInorm <= 0.5 ~ tags[2],
+  IFInorm > 0.5 & IFInorm <= 1 ~ tags[3],
+  IFInorm > 1 & IFInorm <= 1.5 ~ tags[4],
+  IFInorm > 1.5 & IFInorm <= 2 ~ tags[5],
+  IFInorm > 2 & IFInorm <= 2.5 ~ tags[6],
+  IFInorm > 2.5 ~ tags[7]
+))
+covid <- AddMetaData(covid, IFInorm[,"IFIbin3", drop = FALSE])
+```
+
+```{r}
+
+SpatialDimPlot(covid, group.by = "IFIbin3", cols = c("white", brewer.pal(6, "Reds")))
+```
+
+
+  mutate(tag = case_when(
+    MeanEducation < 2 ~ tags[1],
+    MeanEducation >= 2 & MeanEducation < 4 ~ tags[2],
+    MeanEducation >= 4 & MeanEducation < 6 ~ tags[3],
+    MeanEducation >= 6 & MeanEducation < 8 ~ tags[4],
+    MeanEducation >= 8 & MeanEducation < 10 ~ tags[5],
+    MeanEducation >= 10 & MeanEducation < 12 ~ tags[6],
+    MeanEducation >= 12 & MeanEducation < 14 ~ tags[7],
+    MeanEducation >= 14 & MeanEducation < 16 ~ tags[8],
+    MeanEducation >= 16 & MeanEducation < 18 ~ tags[9],
+    MeanEducation >= 18 & MeanEducation < 20 ~ tags[10]
+    ))
+
+
+```{r}
+# plot IFI27 exp vs CD14 monocyte score
+scorescatter <- covid[[c("IFInorm", "prediction.score.CD14_Mono", "IFIbin2")]]
+ggplot(covid[[]], aes(x=prediction.score.CD14_Mono, y=IFInorm, color=IFIbin2)) + 
+    geom_point(size=6)
+```
+```{r}
+bin_quant <- binning(IFInorm$IFInorm, type = c("quantile"), nbins = 4)
+bin_quant2 <- extract(bin_quant)
+bin_kmeans <- binning(IFInorm$IFInorm, type = c("kmeans"), nbins = 4)
+bin_kmeans2 <- extract(bin_kmeans)
+IFInorm$binquant <- bin_quant2
+IFInorm$bin_kmeans <- bin_kmeans2
+covid <- AddMetaData(covid, IFInorm[,c("binquant", "bin_kmeans")])
+```
+
+```{r}
+palettebinquant = c(`[0,0.603]` = "white",
+                    `(0.603,1.03]` = "blue",
+                    `(1.03,2.85]` = "red")
+
+palettebinkmeans = c(`[0,0.339]` = "white",
+                    `(0.339,0.893]` = "lightskyblue",
+                    `(0.893,1.38]` = "blue",
+                    `(1.38,2.85]` = "red")
+
+
+SpatialDimPlot(covid, group.by = "binquant", cols = palettebinquant)
+SpatialDimPlot(covid, group.by = "bin_kmeans", cols = palettebinkmeans)
+```
+
+```{r}
+bin_equal <- binning(IFInorm$IFInorm, type = c("equal"), nbins = 4)
+bin_equal2 <- extract(bin_equal)
+IFInorm$binequal <- bin_equal2
+covid <- AddMetaData(covid, IFInorm[,"binequal", drop = FALSE])
+SpatialDimPlot(covid, group.by = "binequal", cols = brewer.pal(4, "Reds"))
+```
+
+```{r}
+palettebinquant = c(`[0,0.603]` = "white",
+                    `(0.603,1.03]` = "blue",
+                    `(1.03,2.85]` = "red")
+
+palettebinkmeans = c(`[0,0.339]` = "white",
+                    `(0.339,0.893]` = "lightskyblue",
+                    `(0.893,1.38]` = "blue",
+                    `(1.38,2.85]` = "red")
+
+
+SpatialDimPlot(covid, group.by = "binquant", cols = palettebinquant)
+SpatialDimPlot(covid, group.by = "bin_kmeans", cols = palettebinkmeans)
+```
+
+# Perform DE between groups
+
+```{r}
+Idents(covid) <- "IFIbin2"
+
+bins_markers <- FindAllMarkers(covid, only.pos = FALSE, min.pct = 0.25, logfc.threshold = 0.25)
+top10 <- bins_markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC)
+
+write.table(bins_markers, file = "/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210419_BinIFI27/outdir/Bin2_allmarkers.txt", sep = "\t", quote = FALSE, col.names = NA)
+write.table(top10, file = "/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210419_BinIFI27/outdir/Bin2_allmarkers.txt", sep = "\t", quote = FALSE, col.names = NA)
+```
+
+
