@@ -12,12 +12,8 @@ library(RColorBrewer)
 
 ```{r}
 outdir <- "/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210419_BinIFI27/outdir/"
-```
-
-
-```{r}
 covid <- readRDS("/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210409_PreliminaryPipeline/outdir_alltissues/all_DF_annotated.RDS")
-predictions <- read.delim("/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210413_LabelTransfer/VS_INFB/all_predictions.txt")
+predictions <- read.delim("/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210413_LabelTransfer/VS_INFB/all_predictions.txt") # label transfer results, used for certain visualisations but not needed for core result i.e. IFI27 expression plots
 rownames(predictions) <- predictions$X
 predictions$X <- NULL
 covid <- AddMetaData(covid, predictions)
@@ -25,16 +21,14 @@ SpatialDimPlot(covid, group.by = "predicted.id_medConf")
 ```
 
 ```{r}
-SpatialFeaturePlot(covid, features = c("IFI27"))
-
-+ ggplot2::scale_fill_continuous(limits = c(0.0,1.0),, breaks = c(0.0, 0.5, 1.0))
+SpatialFeaturePlot(covid, features = c("IFI27")) +
+ggplot2::scale_fill_continuous(limits = c(0.0,1.0),, breaks = c(0.0, 0.5, 1.0))
 ```
+
 ```{r}
 DotPlot(object = covid, features = c("IFI27", "ACE2", "TMPRSS2", "CTSL"), group.by = "tissues") +
   scale_colour_gradient2(low = "blue", mid = "white", high = "red")
 ```
-
-exprMatrix <- B1@assays$B1@counts
 
 ```{r}
 IFIexp <- covid@assays$Spatial@counts["IFI27",]
@@ -72,16 +66,6 @@ SpatialDimPlot(covid, group.by = "IFIbin2", cols = palette)
 
 ```
 
-binning(
-  x,
-  nbins,
-  type = c("quantile", "equal", "pretty", "kmeans", "bclust"),
-  ordered = TRUE,
-  labels = NULL,
-  approxy.lab = TRUE
-)
-
-
 # bin into more groups
 
 ```{r}
@@ -103,27 +87,13 @@ covid <- AddMetaData(covid, IFInorm[,"IFIbin3", drop = FALSE])
 SpatialDimPlot(covid, group.by = "IFIbin3", cols = c("white", brewer.pal(6, "Reds")))
 ```
 
-
-  mutate(tag = case_when(
-    MeanEducation < 2 ~ tags[1],
-    MeanEducation >= 2 & MeanEducation < 4 ~ tags[2],
-    MeanEducation >= 4 & MeanEducation < 6 ~ tags[3],
-    MeanEducation >= 6 & MeanEducation < 8 ~ tags[4],
-    MeanEducation >= 8 & MeanEducation < 10 ~ tags[5],
-    MeanEducation >= 10 & MeanEducation < 12 ~ tags[6],
-    MeanEducation >= 12 & MeanEducation < 14 ~ tags[7],
-    MeanEducation >= 14 & MeanEducation < 16 ~ tags[8],
-    MeanEducation >= 16 & MeanEducation < 18 ~ tags[9],
-    MeanEducation >= 18 & MeanEducation < 20 ~ tags[10]
-    ))
-
-
 ```{r}
 # plot IFI27 exp vs CD14 monocyte score
 scorescatter <- covid[[c("IFInorm", "prediction.score.CD14_Mono", "IFIbin2")]]
 ggplot(covid[[]], aes(x=prediction.score.CD14_Mono, y=IFInorm, color=IFIbin2)) + 
     geom_point(size=6)
 ```
+
 ```{r}
 bin_quant <- binning(IFInorm$IFInorm, type = c("quantile"), nbins = 4)
 bin_quant2 <- extract(bin_quant)
