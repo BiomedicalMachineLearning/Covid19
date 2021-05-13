@@ -1,0 +1,242 @@
+---
+title: "Bin IFI27"
+output: html_notebook
+---
+
+```{r}
+library(Seurat)
+library(dplyr)
+library(dlookr)
+library(RColorBrewer)
+library(ggplot2)
+```
+
+```{r}
+outdir <- "/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210423_PlotKeyGenes/outdir/"
+```
+
+
+```{r}
+covid <- readRDS("/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210409_PreliminaryPipeline/outdir_alltissues/all_DF_annotated.RDS")
+predictions <- read.delim("/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210413_LabelTransfer/VS_INFB/all_predictions.txt")
+rownames(predictions) <- predictions$X
+predictions$X <- NULL
+covid <- AddMetaData(covid, predictions)
+SpatialDimPlot(covid, group.by = "predicted.id_medConf")
+```
+
+```{r}
+# I changed RIG-1 --> DDX58
+test <- c("LY6E", "IFI44L", "OAS1", "IFI6", "ISG15", "OASL", "RTP4", "IRF7", "XAF1", "IFIT1", "LGALS3BP", "CD38", "HERC6", "EIF2AK2", "IFIH1", "MX1", "IFITM3", "PARP12", "HERC5", "IRF5", "IFI35", "ZBP1", "IRF9", "CXCL10", "IRF3", "IFNA2", "IRF1", "IFNA1", "IFNA13", "IFNGR1", "IFNB1", "IFNG", "IFNAR2", "IFNAR1", "BAK1", "BAX", "CASP7", "CASP3", "CASP1", "TNFSF10", "CASP6", "IL18", "TRADD", "CASP9", "FADD", "CASP4", "CASP5", "FASLG", "TP53", "FAS", "CASP12", "NLRP3", "XIAP", "MDM2", "BCL2", "CASP8", "CASP2", "NFKB1", "BID", "DDX58", "TLR7", "TLR3", "TLR2", "TLR5", "TLR4", "TLR1", "TLR8", "TLR9", "TLR6", "SEPP1", "LY86", "HIF1A", "CIT", "RGS1", "CD163", "OR52R1", "DEFA4", "PER1", "KCNJ2", "C11orf74", "TST")
+table(test %in% rownames(covid@assays$Spatial@counts))
+```
+
+```{r}
+interferon <- c("LY6E", "IFI44L", "OAS1", "IFI6", "ISG15", "OASL", "RTP4", "IRF7", "XAF1", "IFIT1", "LGALS3BP", "CD38", "HERC6", "EIF2AK2", "IFIH1", "MX1", "IFITM3", "PARP12", "HERC5", "IRF5", "IFI35", "ZBP1", "IRF9", "CXCL10", "IRF3", "IFNA2", "IRF1", "IFNA1", "IFNA13", "IFNGR1", "IFNB1", "IFNG", "IFNAR2", "IFNAR1")
+
+apoptosis <- c("BAK1", "BAX", "CASP7", "CASP3", "CASP1", "TNFSF10", "CASP6", "IL18", "TRADD", "CASP9", "FADD", "CASP4", "CASP5", "FASLG", "TP53", "FAS", "NLRP3", "XIAP", "MDM2", "BCL2", "CASP8", "CASP2", "NFKB1", "BID")
+
+pathogen_sensing <- c("DDX58", "TLR7", "TLR3", "TLR2", "TLR5", "TLR4", "TLR1", "TLR8", "TLR9", "TLR6")
+
+prognostic <- c("SELENOP", "LY86", "HIF1A", "CIT", "RGS1", "CD163", "OR52R1", "DEFA4", "PER1", "KCNJ2", "C11orf74", "TST")
+# remove CASP12 from apoptosis and changed SEPP1 to SELENOP (should it be SELP?) in prognostic
+```
+
+
+```{r}
+for (gene in interferon) {
+  SpatialFeaturePlot(covid, features = c(gene)) + ggtitle(paste0("Interferon Pathway: ", gene))
+  ggsave(filename = paste0(outdir, "interferon_", gene, ".jpeg"))
+}
+
+for (gene in apoptosis) {
+  SpatialFeaturePlot(covid, features = c(gene)) + ggtitle(paste0("Apoptosis: ", gene))
+  ggsave(filename = paste0(outdir, "apoptosis_", gene, ".jpeg"))
+}
+
+for (gene in pathogen_sensing) {
+  SpatialFeaturePlot(covid, features = c(gene)) + ggtitle(paste0("Pathogen Sensing: ", gene))
+  ggsave(filename = paste0(outdir, "pathogenSensing_", gene, ".jpeg"))
+}
+
+for (gene in prognostic) {
+  SpatialFeaturePlot(covid, features = c(gene)) + ggtitle(paste0("Prognostic: ", gene))
+  ggsave(filename = paste0(outdir, "prognostic_", gene, ".jpeg"))
+}
+```
+
+```{r}
+DotPlot(object = covid, features = c(interferon), group.by = "tissues") +
+  scale_colour_gradient2(low = "blue", mid = "white", high = "red") +
+  RotatedAxis()
+ggsave(filename = paste0(outdir, "dotplot_", "interferon", ".jpeg"), width = 10)
+
+DotPlot(object = covid, features = c(apoptosis), group.by = "tissues") +
+  scale_colour_gradient2(low = "blue", mid = "white", high = "red") +
+  RotatedAxis()
+ggsave(filename = paste0(outdir, "dotplot_", "apoptosis", ".jpeg"), width = 10)
+
+DotPlot(object = covid, features = c(pathogen_sensing), group.by = "tissues") +
+  scale_colour_gradient2(low = "blue", mid = "white", high = "red") +
+  RotatedAxis()
+ggsave(filename = paste0(outdir, "dotplot_", "pathogen_sensing", ".jpeg"), width = 10)
+
+DotPlot(object = covid, features = c(prognostic), group.by = "tissues") +
+  scale_colour_gradient2(low = "blue", mid = "white", high = "red") +
+  RotatedAxis()
+ggsave(filename = paste0(outdir, "dotplot_", "prognostic", ".jpeg"), width = 10)
+```
+
+
+```{r}
+normgenes <- as.data.frame(t(as.data.frame(covid@assays$Spatial@data[c("IFI27", "CTSL", interferon, apoptosis, pathogen_sensing, prognostic),])))
+# need to remove genes with 0 counts in all spots, or the binning will fail
+normgenes <- normgenes[,names(which(colSums(normgenes) > 0))]
+# also manually remove genes that fail later on, e.g. only 1 spot
+#colnames(normgenes)[64]
+normgenes <- normgenes[,-which(colnames(normgenes) == "FASLG")]
+normgenes <- normgenes[,-which(colnames(normgenes) == "TLR9")]
+
+```
+
+# Bin the genes
+
+```{r}
+myrows = nrow(normgenes)
+mycols = ncol(normgenes)
+
+output <- matrix(ncol = mycols, nrow = myrows)
+rownames(output) <- rownames(normgenes)
+colnames(output) <- colnames(normgenes)
+for(i in 1:mycols){
+  #colnames(output[,gene]) <- colnames(normgenes)[gene]
+  binresults <- as.character(extract(binning(normgenes[,i], type = "equal", nbins = 3, labels = c("lo", "med", "hi"))))
+  # changes the genes with 0 counts to off
+  binresults[which(normgenes[,i] == 0)] <- "off"
+  output[,i] <- binresults
+ }
+output <- data.frame(output)
+write.table(output, file = paste0(outdir, "BinsForGenesOfInterest.txt"), sep = "\t", quote = FALSE, col.names = NA)
+# now I need to change the "off" genes
+covid <- AddMetaData(covid, output)
+```
+
+```{r}
+palette = c(`off` = "white",
+            `lo` = "lightskyblue",
+            `med` = "blue",
+            `hi` = "red")
+
+palette_red = c(`off` = "white",
+            `lo` = "#FCAE91",
+            `med` = "#FB6A4A",
+            `hi` = "#CB181D")
+```
+
+```{r}
+for (gene in interferon) {
+  if (gene %in% colnames(covid[[]])) {
+  SpatialDimPlot(covid, group.by = gene, cols = palette)
+  ggsave(filename = paste0(outdir, "interferon_bins_", gene, ".jpeg"))
+  } else {
+  print(paste0(gene, " not found"))
+  }
+}
+
+for (gene in apoptosis) {
+  if (gene %in% colnames(covid[[]])) {
+  SpatialDimPlot(covid, group.by = gene, cols = palette)
+  ggsave(filename = paste0(outdir, "apoptosis_bins_", gene, ".jpeg"))
+  } else {
+  print(paste0(gene, " not found"))
+  }
+}
+
+for (gene in pathogen_sensing) {
+  if (gene %in% colnames(covid[[]])) {
+  SpatialDimPlot(covid, group.by = gene, cols = palette)
+  ggsave(filename = paste0(outdir, "pathogen_sensing_bins_", gene, ".jpeg"))
+  } else {
+  print(paste0(gene, " not found"))
+  }
+}
+
+for (gene in prognostic) {
+  if (gene %in% colnames(covid[[]])) {
+  SpatialDimPlot(covid, group.by = gene, cols = palette)
+  ggsave(filename = paste0(outdir, "prognostic_bins_", gene, ".jpeg"))
+  } else {
+  print(paste0(gene, " not found"))
+  }
+}
+```
+
+Or plot the same thing with a red palette
+
+```{r}
+for (gene in interferon) {
+  if (gene %in% colnames(covid[[]])) {
+  SpatialDimPlot(covid, group.by = gene, cols = palette_red) + ggtitle(gene) + NoLegend()
+  ggsave(filename = paste0(outdir, "redPalette/", "interferon_bins_", gene, ".jpeg"))
+  } else {
+  print(paste0(gene, " not found"))
+  }
+}
+
+for (gene in apoptosis) {
+  if (gene %in% colnames(covid[[]])) {
+  SpatialDimPlot(covid, group.by = gene, cols = palette_red) + ggtitle(gene) + NoLegend()
+  ggsave(filename = paste0(outdir, "redPalette/", "apoptosis_bins_", gene, ".jpeg"))
+  } else {
+  print(paste0(gene, " not found"))
+  }
+}
+
+for (gene in pathogen_sensing) {
+  if (gene %in% colnames(covid[[]])) {
+  SpatialDimPlot(covid, group.by = gene, cols = palette_red) + ggtitle(gene) + NoLegend()
+  ggsave(filename = paste0(outdir, "redPalette/", "pathogen_sensing_bins_", gene, ".jpeg"))
+  } else {
+  print(paste0(gene, " not found"))
+  }
+}
+
+for (gene in prognostic) {
+  if (gene %in% colnames(covid[[]])) {
+  SpatialDimPlot(covid, group.by = gene, cols = palette_red) + ggtitle(gene) + NoLegend()
+  ggsave(filename = paste0(outdir, "redPalette/", "prognostic_bins_", gene, ".jpeg"))
+  } else {
+  print(paste0(gene, " not found"))
+  }
+}
+
+  SpatialDimPlot(covid, group.by = gene, cols = palette_red)
+  ggsave(filename = paste0(outdir, "redPalette/", "legend.jpeg"))
+```
+
+# Next do pearson correlation
+
+```{r}
+cor.scores.normvalues <- as.data.frame(cor(normgenes, method = c("pearson")))
+cor.scores.normvalues.sp <- as.data.frame(cor(normgenes, method = c("spearman")))
+ComplexHeatmap::Heatmap(as.matrix(cor.scores.normvalues),
+                              use_raster = TRUE, raster_quality = 1) #based on current figure)
+ComplexHeatmap::Heatmap(as.matrix(cor.scores.normvalues.sp),
+                              use_raster = TRUE, raster_quality = 1) #based on current figure)
+```
+
+This doesn't seem to work and I don't want to do a correlation on the binned data
+
+# Perform DE between groups
+
+```{r}
+Idents(covid) <- "IFIbin2"
+
+bins_markers <- FindAllMarkers(covid, only.pos = FALSE, min.pct = 0.25, logfc.threshold = 0.25)
+top10 <- bins_markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC)
+
+write.table(bins_markers, file = "/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210419_BinIFI27/outdir/Bin2_allmarkers.txt", sep = "\t", quote = FALSE, col.names = NA)
+write.table(top10, file = "/Volumes/STNNHPC-Q1139/Laura/Covid19_ST/2_output/20210419_BinIFI27/outdir/Bin2_allmarkers.txt", sep = "\t", quote = FALSE, col.names = NA)
+```
+
+
